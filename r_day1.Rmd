@@ -1,0 +1,131 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+install.packages('rvest') #安装rvest
+```
+
+```{r}
+library(rvest) #引用rvest包
+url1 <- 'http://www.imdb.com/search/title?count=100&release_date=2016,2016&title_type=feature' 
+```
+
+```{r}
+webpage <- read_html(url1)
+print(webpage)
+```
+
+```{r}
+html = html_nodes(webpage,'.lister-item-header') #html_nodes 读取获取的节点
+name = html_name(html)
+head(name)
+```
+
+电影排名
+```{r} 
+rank_data_html <- html_nodes(webpage, '.text-primary')  #获取排名部分
+#'.text-primary'为包含电影排名的节点，可以借助CSS辅助器，能很快获得我们需要的节点内容
+rank_data <- html_text(rank_data_html)  #把排名转换为文本
+head(rank_data)  #检查一遍数据
+```
+
+电影年份
+```{r}
+
+```
+
+```{r}
+year_html <- html_nodes(webpage, '.text-muted.unbold')  
+year_name <- html_text(year_html)
+head(year_name)
+```
+
+电影名称
+```{r}
+title_html <- html_nodes(webpage, '.lister-item-header a')  #按照同样的步骤获取电影标题
+title_name <- html_text(title_html)
+head(title_name)
+```
+
+电影类型
+```{r}
+category_html = html_nodes(webpage,'.genre')
+category_data = html_text(category_html)
+head(category_data)
+```
+
+
+##数据清理
+gsub函数：在文字清理上非常常用的函数
+```{r}
+category_data = gsub('\n','',category_data)
+#category_data 中的‘\n’替换为空，来去掉开通的换行
+category_data = gsub('^\\s+|\\s+$','',category_data)
+#去掉开头和结尾的空格
+#^ 字符串开头
+#\\s+ 任意空白格
+#| and $ 字符串结尾
+#连在一起就是匹配字符串开头结尾的任意空白格
+head(category_data)
+```
+
+保留一个电影种类
+```{r}
+genre_data = gsub(",.*","",category_data)
+#,.*,从遇到的第一个逗号开始匹配并替换成空‘’
+#即，从逗号开始到结尾部分删掉，电影只保留第一种类型
+genre_data = as.factor(genre_data)
+#将电影类型转化为因子，方便后续作图按照电影种类划分
+head(genre_data)
+```
+. 指无论逗号后出现什么都要被锁定
++指至少一次，*指零或多次，即不出现这种情况也可以
+
+电影评级
+```{r}
+rating_data_html = html_nodes(webpage,'.ratings-imdb-rating')
+#获取电影评级
+rating_data = html_attr(rating_data_html,'data-value')
+#提取评级数据
+rating_data = as.numeric(rating_data)
+#评级数据转化为数值型
+head(rating_data)
+```
+
+电影时长
+```{r}
+runtime_data_html <- html_nodes(webpage, '.text-muted .runtime')  #获取电影时长
+runtime_data <- html_text(runtime_data_html)  #转换为文本
+runtime_data <- gsub(" min","", runtime_data)  #去掉数据中的 min
+runtime_data <- as.numeric(runtime_data)  #将时长转换为数值型
+head(runtime_data)
+```
+
+
+View(runtime_data)
+
+
+
+
+
+
+
+
+
+
