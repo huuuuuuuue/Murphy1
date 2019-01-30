@@ -1,0 +1,216 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+#Update java to the right version
+install.packages("rJava",,"http://cran.r-project.org",type='source')
+#rjava是一个r和java的通信借口，允许在r中直接调用Java的对象和方法
+install.packages("RWeka")
+```
+weka的r借口，weka是用Java便携的数据挖掘任务和及其学习算法的集合
+sessionInfo()
+#查询和打印当前r的信息
+require(devtools)
+#加载devtools包，用于在线托管的扩展包，检查扩展包是否符合cran标准
+
+```{r}
+install.packages("tm")
+#安装指定版本的tm包，用于文本挖掘
+```
+
+```{r}
+install.packages("wordcloud")
+#绘制词云
+```
+
+devtools::install_github("r-lib/xml2")
+```{r}
+devtools::install_github("r-lib/xml2")
+```
+
+#install_github('A/B')
+
+```{r}
+install.packages("NMF")
+
+```
+
+```{r}
+install.packages("RColorBrewer")
+```
+
+```{r}
+install.packages("plotrix")
+```
+
+```{r}
+## Need this line so qdap will load correctly (with java) when using knitr button. 
+#dyn.load('/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre/lib/server/libjvm.dylib')
+#library(qdap)
+#library(RWeka)
+#library(dplyr) #dplyr?????????ݴ???
+library(tm)
+library(wordcloud)
+#library(RColorBrewer)
+#library(plotrix) #plotrix?????ڻ?ͼ
+library(ggplot2) #ggplot2??ǿ???Ļ?ͼ??
+```
+
+```{r}
+tweets <- read.csv('https://assets.datacamp.com/production/course_935/datasets/coffee.csv', stringsAsFactors = F) 
+#从链接中读取csv
+```
+
+tweets$text
+
+
+```{r}
+str(tweets) #紧凑显示对象内部结构
+coffee_tweets <- tweets$text #从tweets数据框中提取text向量
+
+## VectorSource, VCorpus in tm package
+coffee_source <- VectorSource(coffee_tweets) #文档转为向量
+coffee_corpus <- VCorpus(coffee_source) #构建语料库
+coffee_corpus
+```
+
+
+```{r}
+text = 'I like STarbucks more  than COSTA ! @@ I eat 2 meals a day ~'
+```
+
+```{r}
+tolower(text)
+```
+```{r}
+removePunctuation(text)
+removeNumbers(text)
+stripWhitespace(text)
+removeWords(text, 'I')
+```
+
+```{r}
+stopwords("en")
+```
+
+```{r}
+removeWords(text, stopwords("en"))
+removeWords(tolower(text), stopwords("en"))
+removeWords(tolower(text), c(stopwords("en"),'eat'))
+```
+
+
+
+tm_map takes a corpus and a processing funciton and transforms the corpus
+if the function is not from the tm library than wrap it in content_transformer() function
+
+Clean TEXTs
+```{r}
+#构建清洗文本的函数
+clean_corpus <- function(corpus){
+  corpus <- tm_map(corpus, stripWhitespace) #出去多余空格
+  corpus <- tm_map(corpus, removePunctuation) #去除标点
+  corpus <- tm_map(corpus, content_transformer(tolower)) #转换为消协
+  corpus <- tm_map(corpus, removeWords, c(stopwords("en"),"coffee","mug")) #去除stopword，r会自动连接识别，并去除coffee，mug
+  return(corpus)
+}
+```
+
+```{r}
+#??????ϴ????clean_corpus_ 
+clean_corpus_ <- function(corpus, stopword_condition = c(stopwords('en'))){
+  corpus <- tm_map(corpus, stripWhitespace)
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, content_transformer(tolower))
+  corpus <- tm_map(corpus, removeNumbers) #ȥ??????
+  corpus <- tm_map(corpus, removeWords,stopword_condition)
+  return(corpus)
+}
+```
+
+
+```{r}
+#???ĵ????뵽???湹???ĺ???
+## clean_corp <- clean_corpus(coffee_corpus)
+clean_corp <- clean_corpus_(coffee_corpus, c(stopwords("en"),"coffee","mug"))
+```
+
+```{r}
+#???????ȶ???ϴǰ????????
+print(paste('Original text: ', coffee_corpus[[20]][1]))
+print(paste('Cleand text: ', clean_corp[[20]][1]))
+```
+
+TDM -- Term Document Matrix
+```{r}
+#????term-document matrix??????-?ĵ???????
+coffee_tdm <- TermDocumentMatrix(clean_corp)
+coffee_tdm
+```
+
+
+```{r}
+t_texts <- c("I like apple","I like like apple keke","I love orange more than apple")
+t_source <-VectorSource(t_texts)
+t_corpus <- VCorpus(t_source)
+t_tdm <- TermDocumentMatrix(t_corpus)
+t_m <- as.matrix(t_tdm)
+t_m
+```
+
+```{r}
+#??coffee_tdmת??Ϊ???󲢲鿴???е?100-105?У?14??16?е?????
+coffee_m <- as.matrix(coffee_tdm)
+coffee_m[100:105, 14:16]
+```
+
+```{r}
+term_frequency <- rowSums(coffee_m) #ͳ??ÿ???ʵ?Ƶ??
+term_frequency <- sort(term_frequency, decreasing = T) #???ս???????
+barplot(term_frequency[1:10], col = '#B2ABD2', las = 2) #????ǰʮ????Ƶ?ʵ?????ͼ
+```
+
+
+```{r}
+clean_corp <- clean_corpus_(coffee_corpus, c(stopwords("en"),"coffee"))
+coffee_tdm <- TermDocumentMatrix(clean_corp)
+coffee_m <- as.matrix(coffee_tdm)
+term_frequency <- rowSums(coffee_m)
+term_frequency <- sort(term_frequency, decreasing = T)
+barplot(term_frequency[1:10], col = '#B2ABD2', las = 2)
+```
+
+
+```{r}
+coffee <- data.frame(term = names(term_frequency), 
+                     num = term_frequency) #??????Ƶ???ݿ? 
+wordcloud(coffee$term, coffee$num,max.word = 50, colors = 'red') #???ƴ???ͼ????ɫΪ??ɫ??ͼƬ??ʾ????????Ϊ50????ɫΪ??ɫ??Ĭ???ǰ??ս????Ӵ???С??ʼ????
+wordcloud(coffee$term, coffee$num,max.word = 50, colors = c('grey80','darkgoldenrod1','tomato'))#??????ɫ???ð?Ĭ????ɫ?ǴӸ??ݴ?Ƶ??С?????ġ????Գ??Ըı???ɫ˳?򿴿???ʲô?仯
+```
+
+
+
+
+
+
+
+
+
+
+
