@@ -1,0 +1,96 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+#install.packages('quantmod')
+#library(quantmod)
+```{r}
+install.packages('quantmod')
+```
+
+
+```{r}
+library(quantmod)   #调用“quantmod” library
+getSymbols("AAPL")  #从雅虎资源读取苹果公司股票价格数据 (2007-01-03/2019-01-09)
+plot(AAPL[, "AAPL.Close"], main = "AAPL") #可视化苹果公司股票价格的走势情况
+```
+
+```{r}
+candleChart(AAPL, up.col = "black", dn.col = "red", theme = "white")  #绘制日本烛台图更加清晰体现不同变量下的数据走势
+```
+
+
+
+```{r}
+getSymbols("AAPL",from = "2018-01-01")  #从雅虎资源读取2018年1月1日以后的苹果股票价格数据
+candleChart(AAPL, up.col = "black", dn.col = "red", theme = "white") #绘制烛台图，设置up candle颜色为黑色，down candle颜色为红色，背景颜色为白色
+```
+
+
+
+```{r}
+getSymbols(c("MSFT", "GOOG"), from = "2018-01-01")  #读取2018年1月1日之后的微软和谷歌股票价格数据
+stocks <- as.xts(data.frame(AAPL = AAPL[, "AAPL.Close"], MSFT = MSFT[, "MSFT.Close"], 
+    GOOG = GOOG[, "GOOG.Close"]))  #建立名为“stocks”的dataframe，存储苹果、微软和谷歌三家公司的股票收市价，并转换成具有时间索引的观测值矩阵
+head(stocks)  #显示矩阵前几行数据
+```
+
+```{r}
+plot(as.zoo(stocks), screens = 1, lty = 1:3, xlab = "Date", ylab = "Price") #使“stocks”转换成zoo class，并可视化三家公司收市价随年份的变化趋势
+legend("right", c("AAPL", "MSFT", "GOOG"), lty = 1:3, cex = 0.5)  #标记图标
+```
+
+```{r}
+plot(as.zoo(stocks[, c("AAPL.Close", "MSFT.Close")]), screens = 1, lty = 1:2, 
+    xlab = "Date", ylab = "Price")  #使“stocks”中苹果和微软的数据转换成zoo class，并可视化这两家公司收市价随年份的变化趋势
+par(new = TRUE)  #使多个可视化曲线显示在同一个图中
+plot(as.zoo(stocks[, "GOOG.Close"]), screens = 1, lty = 3, xaxt = "n", yaxt = "n", 
+    xlab = "", ylab = "")  #使“stocks”中谷歌的数据转换成zoo class，并可视化谷歌的收市价随年份的变化趋势
+axis(4) #表明图像的4边用来画数轴 
+mtext("Price", side = 4, line = 3)  #在右边边缘上添加文本
+legend("topleft", c("AAPL (left)", "MSFT (left)", "GOOG"), lty = 1:3, cex = 0.5) #在左上方添加图标
+
+```
+
+```{r}
+stocks_return <- data.frame(AAPL.return =  stocks$AAPL.Close / as.numeric(stocks$AAPL.Close[1]),
+                            GOOG.return = stocks$GOOG.Close / as.numeric(stocks$GOOG.Close[1]),
+                            MSFT.return = stocks$MSFT.Close / as.numeric(stocks$MSFT.Close[1])) #计算每家公司的股票回报，并整合在一个名为“stocks_return"的dataframe中
+```
+
+```{r}
+plot(as.zoo(stocks_return), screens = 1, lty = 1:3, xlab = "Date", ylab = "Return")  ##使“stocks_return”转换成zoo class，并可视化三家公司股票回报随年份的变化趋势
+legend("topleft", c("AAPL", "MSFT", "GOOG"), lty = 1:3, cex = 0.5)  #添加图标
+```
+
+
+```{r}
+stocks_change <- diff(log(stocks))  #找到股票价格的对数差异
+plot(as.zoo(stocks_change), screens = 1, lty = 1:3, xlab = "Date", ylab = "Log Difference")  #使股票价格的对数差异转换成zoo class并将其可视化
+legend("topleft", c("AAPL", "MSFT", "GOOG"), lty = 1:3, cex = 0.5)  #在左上方添加图标
+```
+
+```{r}
+candleChart(AAPL, up.col = "black", dn.col = "red", theme = "white")  #重新绘制苹果公司股票价格的烛台图
+addSMA(n = 20)  #在图中添加20天的移动平均线
+```
+
+```{r}
+candleChart(AAPL, up.col = "black", dn.col = "red", theme = "white", subset = "2016-01-04/") #重新绘制苹果公司股票价格的烛台图，数据从2016年1月4日开始
+addSMA(n = c(20, 50, 200)) #在图中添加20天，50天和200天的移动平均线
+```
